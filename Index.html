@@ -1,0 +1,2188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极简记账</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #5e7ce8;
+            --primary-light: #7c9aff;
+            --primary-dark: #4a6bd6;
+            --secondary: #4a6cf7;
+            --success: #00c9a7;
+            --danger: #ff6b6b;
+            --warning: #ffd166;
+            --dark: #1a1a2e;
+            --darker: #16213e;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            color: var(--light);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 登录界面 */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: var(--transition);
+        }
+
+        .login-box {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            width: 90%;
+            max-width: 400px;
+            transform: translateY(0);
+            transition: var(--transition);
+        }
+
+        .login-box:hover {
+            transform: translateY(-5px);
+        }
+
+        .login-box h1 {
+            text-align: center;
+            color: var(--primary-light);
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.95em;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            font-size: 16px;
+            transition: var(--transition);
+            color: var(--light);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(92, 124, 232, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(92, 124, 232, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: rotate(30deg);
+            transition: all 0.6s ease;
+        }
+
+        .btn:hover::after {
+            transform: rotate(30deg) translate(20%, 20%);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--gray) 0%, #5a6268 100%);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #00b89a 100%);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 5px 15px rgba(0, 201, 167, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #ff5252 100%);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .fingerprint-btn {
+            background: linear-gradient(135deg, var(--warning) 0%, #ffc04d 100%);
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .fingerprint-btn:hover {
+            box-shadow: 0 5px 15px rgba(255, 209, 102, 0.3);
+        }
+
+        /* 主界面 */
+        .main-screen {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 25px 20px;
+            border-radius: 18px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+
+        .balance-summary {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .balance-item h3 {
+            font-size: 0.95em;
+            font-weight: 500;
+            opacity: 0.9;
+            margin-bottom: 5px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .balance-item p {
+            font-size: 1.6em;
+            font-weight: 400;
+            margin-top: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        .income { color: var(--success); }
+        .expense { color: var(--danger); }
+
+        .quick-add {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            padding: 25px;
+            border-radius: 18px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .quick-add h2 {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: var(--primary-light);
+            font-weight: 500;
+        }
+
+        .amount-input {
+            font-size: 2em;
+            text-align: center;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--light);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 15px;
+            transition: var(--transition);
+        }
+
+        .amount-input:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(92, 124, 232, 0.2);
+        }
+
+        .type-selector {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 16px;
+            color: var(--light);
+            font-weight: 500;
+        }
+
+        .type-btn.active {
+            color: white;
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            box-shadow: 0 4px 10px rgba(92, 124, 232, 0.2);
+        }
+
+        .type-btn.expense.active {
+            background: linear-gradient(135deg, var(--danger) 0%, #ff5252 100%);
+            box-shadow: 0 4px 10px rgba(255, 107, 107, 0.2);
+        }
+
+        .type-btn.income.active {
+            background: linear-gradient(135deg, var(--success) 0%, #00b89a 100%);
+            box-shadow: 0 4px 10px rgba(0, 201, 167, 0.2);
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .category-item {
+            padding: 12px 5px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9em;
+            color: var(--light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .category-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-3px);
+        }
+
+        .category-item.selected {
+            border-color: transparent;
+            color: white;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+            box-shadow: 0 4px 10px rgba(92, 124, 232, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .category-item.expense.selected {
+            background: linear-gradient(135deg, var(--danger) 0%, #ff5252 100%);
+            box-shadow: 0 4px 10px rgba(255, 107, 107, 0.2);
+        }
+
+        .category-item.income.selected {
+            background: linear-gradient(135deg, var(--success) 0%, #00b89a 100%);
+            box-shadow: 0 4px 10px rgba(0, 201, 167, 0.2);
+        }
+
+        .category-icon {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+            transition: transform 0.3s;
+        }
+
+        .category-item:hover .category-icon {
+            transform: scale(1.1);
+        }
+
+        .records-section {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .records-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .records-header h2 {
+            color: var(--primary-light);
+            font-weight: 500;
+            font-size: 1.3em;
+        }
+
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px;
+            border-bottom: 1px solid var(--glass-border);
+            transition: var(--transition);
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+
+        .record-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
+        }
+
+        .record-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .record-info {
+            flex: 1;
+        }
+
+        .record-category {
+            font-weight: 500;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.05em;
+        }
+
+        .record-note {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .record-amount {
+            font-size: 1.2em;
+            font-weight: 500;
+        }
+
+        .record-date {
+            font-size: 0.85em;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, var(--danger) 0%, #ff5252 100%);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 0.85em;
+            transition: var(--transition);
+        }
+
+        .delete-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 3px 8px rgba(255, 107, 107, 0.3);
+        }
+
+        /* 设置页面 */
+        .settings-screen {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .settings-section {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 0;
+            border-bottom: 1px solid var(--glass-border);
+            transition: var(--transition);
+        }
+
+        .settings-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-item h3 {
+            font-size: 1.05em;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: var(--light);
+        }
+
+        .settings-item p {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 5px;
+        }
+
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 13px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .toggle.active {
+            background: linear-gradient(135deg, var(--success) 0%, #00b89a 100%);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: var(--transition);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle.active .toggle-slider {
+            transform: translateX(24px);
+        }
+
+        .category-management {
+            margin-top: 15px;
+        }
+
+        .category-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .category-tag {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            cursor: pointer;
+            position: relative;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .category-tag:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .category-tag .delete {
+            color: var(--danger);
+            font-weight: bold;
+            margin-left: 5px;
+            transition: transform 0.2s;
+        }
+
+        .category-tag .delete:hover {
+            transform: scale(1.2);
+        }
+
+        .add-category {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .add-category input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px;
+            color: var(--light);
+            transition: var(--transition);
+        }
+
+        .add-category input:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(92, 124, 232, 0.2);
+        }
+
+        /* 备份页面 */
+        .backup-screen {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .backup-options {
+            display: grid;
+            gap: 25px;
+        }
+
+        .backup-card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .backup-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        .backup-card h3 {
+            margin-bottom: 15px;
+            color: var(--primary-light);
+            font-size: 1.2em;
+            font-weight: 500;
+        }
+
+        .backup-card p {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .backup-status {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            font-size: 0.9em;
+            border-left: 4px solid var(--primary);
+        }
+
+        .backup-status.success {
+            border-left-color: var(--success);
+            background: rgba(0, 201, 167, 0.1);
+        }
+
+        .backup-status.error {
+            border-left-color: var(--danger);
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        /* 底部导航 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+            z-index: 200;
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .nav-item.active {
+            color: var(--primary-light);
+            transform: translateY(-5px);
+        }
+
+        .nav-item:hover {
+            color: var(--light);
+            transform: translateY(-3px);
+        }
+
+        .nav-item.active:hover {
+            color: var(--primary-light);
+        }
+
+        .nav-icon {
+            font-size: 1.6em;
+            transition: transform 0.3s;
+        }
+
+        .nav-item:hover .nav-icon {
+            transform: scale(1.2);
+        }
+
+        .nav-label {
+            font-size: 0.75em;
+            font-weight: 500;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1500;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 35px;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+            transform: scale(0.95);
+            transition: var(--transition);
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+            color: var(--primary-light);
+            font-weight: 500;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.8em;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.7);
+            transition: var(--transition);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .close-btn:hover {
+            color: var(--light);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 图表容器 */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 25px 0;
+            background: var(--glass);
+            backdrop-filter: blur(5px);
+            border-radius: 18px;
+            padding: 15px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .chart-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: rgba(255, 255, 255, 0.5);
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chart-placeholder .icon {
+            font-size: 3em;
+            opacity: 0.3;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .login-box {
+                padding: 25px;
+            }
+            
+            .balance-summary {
+                gap: 15px;
+            }
+
+            .records-section,
+            .settings-section,
+            .backup-card,
+            .quick-add,
+            .header {
+                padding: 20px;
+            }
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--primary-light);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 提示信息 */
+        .toast {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 16px 28px;
+            border-radius: 12px;
+            z-index: 2000;
+            opacity: 0;
+            transition: var(--transition);
+            font-size: 0.95em;
+            box-shadow: var(--shadow);
+            text-align: center;
+            max-width: 90%;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        .toast.info {
+            border-left: 4px solid var(--primary);
+        }
+
+        /* 隐藏类 */
+        .hidden {
+            display: none !important;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-light);
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录界面 -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <h1>极简记账</h1>
+            <div id="loginForm">
+                <div class="form-group">
+                    <label for="loginPassword">密码</label>
+                    <input type="password" id="loginPassword" placeholder="请输入密码">
+                </div>
+                <button class="btn" onclick="login()">登录</button>
+                <button class="btn fingerprint-btn" onclick="biometricLogin()" id="bioBtn">
+                    <span>🔐</span> 指纹登录
+                </button>
+                <p style="text-align: center; margin-top: 20px; color: #999;">
+                    首次使用？ <a href="#" onclick="showRegister()" style="color: #667eea;">注册</a>
+                </p>
+            </div>
+            
+            <div id="registerForm" class="hidden">
+                <div class="form-group">
+                    <label for="regPassword">设置密码</label>
+                    <input type="password" id="regPassword" placeholder="至少6位字符">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">确认密码</label>
+                    <input type="password" id="confirmPassword" placeholder="再次输入密码">
+                </div>
+                <div class="form-group">
+                    <label for="backupEmail">备份邮箱（可选）</label>
+                    <input type="email" id="backupEmail" placeholder="用于接收备份文件">
+                </div>
+                <button class="btn" onclick="register()">注册</button>
+                <button class="btn btn-secondary" onclick="showLogin()">返回登录</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主界面 -->
+    <div class="main-screen" id="mainScreen">
+        <div class="container">
+            <!-- 头部摘要 -->
+            <div class="header">
+                <div class="balance-summary">
+                    <div class="balance-item">
+                        <h3>本月收入</h3>
+                        <p class="income" id="monthlyIncome">¥0.00</p>
+                    </div>
+                    <div class="balance-item">
+                        <h3>本月支出</h3>
+                        <p class="expense" id="monthlyExpense">¥0.00</p>
+                    </div>
+                    <div class="balance-item">
+                        <h3>本月结余</h3>
+                        <p id="monthlyBalance">¥0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速添加 -->
+            <div class="quick-add">
+                <h2>快速记账</h2>
+                <input type="number" class="amount-input" id="amountInput" placeholder="0.00" step="0.01">
+                
+                <div class="type-selector">
+                    <button class="type-btn expense active" onclick="selectType('expense')">支出</button>
+                    <button class="type-btn income" onclick="selectType('income')">收入</button>
+                </div>
+
+                <div class="category-grid" id="categoryGrid">
+                    <!-- 动态生成类别 -->
+                </div>
+
+                <div class="form-group">
+                    <input type="text" id="noteInput" placeholder="备注（可选）" maxlength="50">
+                </div>
+
+                <button class="btn" onclick="addRecord()">添加记录</button>
+            </div>
+
+            <!-- 记录列表 -->
+            <div class="records-section">
+                <div class="records-header">
+                    <h2>最近记录</h2>
+                    <button class="btn btn-secondary" style="width: auto; padding: 5px 15px;" onclick="showChart()">图表</button>
+                </div>
+                <div id="recordsList">
+                    <!-- 动态生成记录 -->
+                </div>
+            </div>
+
+            <!-- 图表模态框 -->
+            <div class="modal" id="chartModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>支出分析</h2>
+                        <button class="close-btn" onclick="closeChart()">&times;</button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="expenseChart"></canvas>
+                        <div class="chart-placeholder" style="display: none;">
+                            <div class="icon">📊</div>
+                            <div>暂无支出数据</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置页面 -->
+    <div class="settings-screen" id="settingsScreen">
+        <div class="container">
+            <div class="header">
+                <h2>设置</h2>
+            </div>
+
+            <div class="settings-section">
+                <h3>分类管理</h3>
+                <div class="category-management">
+                    <div style="margin-bottom: 20px;">
+                        <h4>支出分类</h4>
+                        <div class="category-list" id="expenseCategories"></div>
+                        <div class="add-category">
+                            <input type="text" id="newExpenseCategory" placeholder="新分类名称">
+                            <button class="btn" style="width: auto; padding: 5px 15px;" onclick="addCategory('expense')">添加</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h4>收入分类</h4>
+                        <div class="category-list" id="incomeCategories"></div>
+                        <div class="add-category">
+                            <input type="text" id="newIncomeCategory" placeholder="新分类名称">
+                            <button class="btn" style="width: auto; padding: 5px 15px;" onclick="addCategory('income')">添加</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>安全设置</h3>
+                <div class="settings-item">
+                    <div>
+                        <h3>修改密码</h3>
+                        <p>更改登录密码</p>
+                    </div>
+                    <button class="btn" style="width: auto; padding: 5px 15px;" onclick="showChangePassword()">修改</button>
+                </div>
+                <div class="settings-item">
+                    <div>
+                        <h3>生物识别</h3>
+                        <p>使用指纹或面容ID登录</p>
+                    </div>
+                    <div class="toggle" id="bioToggle" onclick="toggleBiometric()">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>数据管理</h3>
+                <div class="settings-item">
+                    <div>
+                        <h3>自动备份</h3>
+                        <p>每周自动备份数据</p>
+                    </div>
+                    <div class="toggle" id="autoBackupToggle" onclick="toggleAutoBackup()">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+                <div class="settings-item">
+                    <div>
+                        <h3>导出数据</h3>
+                        <p>导出所有记录为CSV文件</p>
+                    </div>
+                    <button class="btn btn-success" style="width: auto; padding: 5px 15px;" onclick="exportData()">导出</button>
+                </div>
+                <div class="settings-item">
+                    <div>
+                        <h3>清空数据</h3>
+                        <p>删除所有记账记录</p>
+                    </div>
+                    <button class="btn btn-danger" style="width: auto; padding: 5px 15px;" onclick="clearAllData()">清空</button>
+                </div>
+            </div>
+
+            <button class="btn btn-danger" style="margin-top: 20px;" onclick="logout()">退出登录</button>
+        </div>
+    </div>
+
+    <!-- 备份页面 -->
+    <div class="backup-screen" id="backupScreen">
+        <div class="container">
+            <div class="header">
+                <h2>备份与恢复</h2>
+            </div>
+
+            <div class="backup-options">
+                <div class="backup-card">
+                    <h3>📤 手动备份</h3>
+                    <p>立即备份数据到邮箱</p>
+                    <button class="btn" onclick="manualBackup()">立即备份</button>
+                    <div class="backup-status" id="manualBackupStatus"></div>
+                </div>
+
+                <div class="backup-card">
+                    <h3>📅 自动备份</h3>
+                    <p>上次备份：<span id="lastBackup">从未</span></p>
+                    <button class="btn" onclick="toggleAutoBackup()">
+                        <span id="autoBackupBtnText">启用自动备份</span>
+                    </button>
+                    <div class="backup-status" id="autoBackupStatus"></div>
+                </div>
+
+                <div class="backup-card">
+                    <h3>📥 恢复数据</h3>
+                    <p>从备份文件恢复数据</p>
+                    <input type="file" id="restoreFile" accept=".json" style="margin: 10px 0;" onchange="previewRestore()">
+                    <button class="btn btn-success" onclick="restoreData()" id="restoreBtn" disabled>恢复数据</button>
+                    <div class="backup-status" id="restoreStatus"></div>
+                </div>
+
+                <div class="backup-card">
+                    <h3>📊 备份文件管理</h3>
+                    <p>管理本地备份文件</p>
+                    <button class="btn" onclick="listLocalBackups()">查看本地备份</button>
+                    <div id="localBackupsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航 -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchScreen('main')">
+            <div class="nav-icon">💰</div>
+            <div class="nav-label">记账</div>
+        </div>
+        <div class="nav-item" onclick="switchScreen('settings')">
+            <div class="nav-icon">⚙️</div>
+            <div class="nav-label">设置</div>
+        </div>
+        <div class="nav-item" onclick="switchScreen('backup')">
+            <div class="nav-icon">☁️</div>
+            <div class="nav-label">备份</div>
+        </div>
+    </div>
+
+    <!-- 提示信息 -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 使用 Web Crypto API 的加密工具类
+        class CryptoUtils {
+            // 使用 PBKDF2 进行密码哈希
+            static async hashPassword(password, salt = null) {
+                const encoder = new TextEncoder();
+                const passwordBuffer = encoder.encode(password);
+                
+                // 生成或解析盐值
+                let saltBuffer;
+                if (salt) {
+                    saltBuffer = this.base64ToArrayBuffer(salt);
+                } else {
+                    saltBuffer = crypto.getRandomValues(new Uint8Array(16));
+                }
+                
+                // 导入密码
+                const keyMaterial = await crypto.subtle.importKey(
+                    'raw',
+                    passwordBuffer,
+                    { name: 'PBKDF2' },
+                    false,
+                    ['deriveBits', 'deriveKey']
+                );
+                
+                // 派生密钥
+                const key = await crypto.subtle.deriveKey(
+                    {
+                        name: 'PBKDF2',
+                        salt: saltBuffer,
+                        iterations: 100000,
+                        hash: 'SHA-256'
+                    },
+                    keyMaterial,
+                    { name: 'AES-GCM', length: 256 },
+                    true,
+                    ['encrypt', 'decrypt']
+                );
+                
+                // 导出密钥哈希
+                const hashBuffer = await crypto.subtle.exportKey('raw', key);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                const saltBase64 = this.arrayBufferToBase64(saltBuffer);
+                
+                return {
+                    hash: hashHex,
+                    salt: saltBase64
+                };
+            }
+            
+            // 验证密码
+            static async verifyPassword(password, storedHash, storedSalt) {
+                const result = await this.hashPassword(password, storedSalt);
+                return result.hash === storedHash;
+            }
+            
+            // 数组缓冲区转 Base64
+            static arrayBufferToBase64(buffer) {
+                const bytes = new Uint8Array(buffer);
+                let binary = '';
+                for (let i = 0; i < bytes.byteLength; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                return btoa(binary);
+            }
+            
+            // Base64 转数组缓冲区
+            static base64ToArrayBuffer(base64) {
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                return bytes.buffer;
+            }
+        }
+
+        // 数据存储类
+        class FinanceApp {
+            constructor() {
+                this.records = this.loadData('finance_records') || [];
+                this.categories = this.loadData('finance_categories') || {
+                    expense: ['餐饮', '交通', '购物', '娱乐', '医疗', '教育', '住房', '其他'],
+                    income: ['工资', '奖金', '投资', '兼职', '其他']
+                };
+                this.settings = this.loadData('finance_settings') || {
+                    autoBackup: false,
+                    biometric: false,
+                    backupEmail: '',
+                    lastBackup: null,
+                    theme: 'default'
+                };
+                this.currentType = 'expense';
+                this.selectedCategory = null;
+                this.chart = null;
+                
+                this.init();
+            }
+
+            init() {
+                this.updateBalance();
+                this.renderCategories();
+                this.renderRecords();
+                this.updateBackupStatus();
+                this.checkAutoBackup();
+                
+                // 初始化设置状态
+                if (this.settings.autoBackup) {
+                    document.getElementById('autoBackupToggle').classList.add('active');
+                }
+                if (this.settings.biometric) {
+                    document.getElementById('bioToggle').classList.add('active');
+                }
+            }
+
+            // 数据存储方法
+            saveData(key, data) {
+                try {
+                    localStorage.setItem(key, JSON.stringify(data));
+                    return true;
+                } catch (e) {
+                    console.error('保存数据失败:', e);
+                    this.showToast('保存失败：存储空间不足', 'error');
+                    return false;
+                }
+            }
+
+            loadData(key) {
+                try {
+                    const data = localStorage.getItem(key);
+                    return data ? JSON.parse(data) : null;
+                } catch (e) {
+                    console.error('加载数据失败:', e);
+                    return null;
+                }
+            }
+
+            // 记录管理
+            addRecord(amount, type, category, note = '') {
+                const record = {
+                    id: Date.now(),
+                    amount: parseFloat(amount),
+                    type,
+                    category,
+                    note,
+                    date: new Date().toISOString(),
+                    timestamp: Date.now()
+                };
+                
+                this.records.unshift(record);
+                if (this.saveData('finance_records', this.records)) {
+                    this.renderRecords();
+                    this.updateBalance();
+                    this.showToast('记录添加成功');
+                    return true;
+                }
+                return false;
+            }
+
+            deleteRecord(id) {
+                this.records = this.records.filter(r => r.id !== id);
+                this.saveData('finance_records', this.records);
+                this.renderRecords();
+                this.updateBalance();
+                this.showToast('记录已删除');
+            }
+
+            // 分类管理
+            addCategory(type, name) {
+                if (!name || this.categories[type].includes(name)) {
+                    return false;
+                }
+                this.categories[type].push(name);
+                this.saveData('finance_categories', this.categories);
+                this.renderCategories();
+                this.showToast('分类添加成功');
+                return true;
+            }
+
+            deleteCategory(type, name) {
+                // 检查是否已有记录使用该分类
+                const hasRecords = this.records.some(r => r.type === type && r.category === name);
+                if (hasRecords) {
+                    this.showToast('该分类下已有记录，无法删除', 'error');
+                    return false;
+                }
+                
+                this.categories[type] = this.categories[type].filter(c => c !== name);
+                this.saveData('finance_categories', this.categories);
+                this.renderCategories();
+                this.showToast('分类已删除');
+                return true;
+            }
+
+            // 界面渲染
+            renderCategories() {
+                const grid = document.getElementById('categoryGrid');
+                grid.innerHTML = '';
+                
+                this.categories[this.currentType].forEach(category => {
+                    const item = document.createElement('div');
+                    item.className = `category-item ${this.currentType} ${this.selectedCategory === category ? 'selected' : ''}`;
+                    item.onclick = () => this.selectCategory(category);
+                    
+                    const icons = {
+                        '餐饮': '🍔', '交通': '🚗', '购物': '🛍️', '娱乐': '🎮', 
+                        '医疗': '🏥', '教育': '📚', '住房': '🏠', '其他': '📦',
+                        '工资': '💰', '奖金': '🎁', '投资': '📈', '兼职': '💼'
+                    };
+                    
+                    item.innerHTML = `
+                        <div class="category-icon">${icons[category] || '📊'}</div>
+                        <div>${category}</div>
+                    `;
+                    grid.appendChild(item);
+                });
+                
+                // 自动选择第一个分类
+                if (this.categories[this.currentType].length > 0 && !this.selectedCategory) {
+                    this.selectedCategory = this.categories[this.currentType][0];
+                    this.renderCategories();
+                }
+            }
+
+            renderRecords() {
+                const list = document.getElementById('recordsList');
+                list.innerHTML = '';
+                
+                if (this.records.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">暂无记录</p>';
+                    return;
+                }
+                
+                // 按日期分组
+                const grouped = {};
+                this.records.slice(0, 50).forEach(record => {
+                    const date = new Date(record.date).toLocaleDateString('zh-CN');
+                    if (!grouped[date]) grouped[date] = [];
+                    grouped[date].push(record);
+                });
+                
+                // 渲染分组
+                Object.keys(grouped).forEach(date => {
+                    const dateDiv = document.createElement('div');
+                    dateDiv.style.marginBottom = '15px';
+                    
+                    const dateHeader = document.createElement('div');
+                    dateHeader.style.fontSize = '0.9em';
+                    dateHeader.style.color = '#999';
+                    dateHeader.style.marginBottom = '10px';
+                    dateHeader.textContent = date;
+                    dateDiv.appendChild(dateHeader);
+                    
+                    grouped[date].forEach(record => {
+                        const item = document.createElement('div');
+                        item.className = 'record-item';
+                        item.innerHTML = `
+                            <div class="record-info">
+                                <div class="record-category">
+                                    <span>${this.getCategoryIcon(record.category)}</span>
+                                    <span>${record.category}</span>
+                                </div>
+                                ${record.note ? `<div class="record-note">${record.note}</div>` : ''}
+                                <div class="record-date">${new Date(record.date).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</div>
+                            </div>
+                            <div class="record-amount ${record.type}">
+                                ${record.type === 'income' ? '+' : '-'}¥${record.amount.toFixed(2)}
+                            </div>
+                            <button class="delete-btn" onclick="app.deleteRecord(${record.id})">删除</button>
+                        `;
+                        dateDiv.appendChild(item);
+                    });
+                    
+                    list.appendChild(dateDiv);
+                });
+            }
+
+            getCategoryIcon(category) {
+                const icons = {
+                    '餐饮': '🍔', '交通': '🚗', '购物': '🛍️', '娱乐': '🎮', 
+                    '医疗': '🏥', '教育': '📚', '住房': '🏠', '其他': '📦',
+                    '工资': '💰', '奖金': '🎁', '投资': '📈', '兼职': '💼'
+                };
+                return icons[category] || '📊';
+            }
+
+            updateBalance() {
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+                
+                let income = 0, expense = 0;
+                
+                this.records.forEach(record => {
+                    const recordDate = new Date(record.date);
+                    if (recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear) {
+                        if (record.type === 'income') {
+                            income += record.amount;
+                        } else {
+                            expense += record.amount;
+                        }
+                    }
+                });
+                
+                document.getElementById('monthlyIncome').textContent = `¥${income.toFixed(2)}`;
+                document.getElementById('monthlyExpense').textContent = `¥${expense.toFixed(2)}`;
+                document.getElementById('monthlyBalance').textContent = `¥${(income - expense).toFixed(2)}`;
+                document.getElementById('monthlyBalance').style.color = income >= expense ? '#28a745' : '#dc3545';
+            }
+
+            showChart() {
+                const modal = document.getElementById('chartModal');
+                modal.style.display = 'flex';
+                
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+                
+                const expenseByCategory = {};
+                let totalExpense = 0;
+                
+                this.records.forEach(record => {
+                    const recordDate = new Date(record.date);
+                    if (recordDate.getMonth() === currentMonth && 
+                        recordDate.getFullYear() === currentYear && 
+                        record.type === 'expense') {
+                        expenseByCategory[record.category] = (expenseByCategory[record.category] || 0) + record.amount;
+                        totalExpense += record.amount;
+                    }
+                });
+                
+                const ctx = document.getElementById('expenseChart').getContext('2d');
+                
+                if (this.chart) {
+                    this.chart.destroy();
+                }
+                
+                if (totalExpense === 0) {
+                    document.getElementById('expenseChart').style.display = 'none';
+                    document.querySelector('.chart-placeholder').style.display = 'flex';
+                } else {
+                    document.getElementById('expenseChart').style.display = 'block';
+                    document.querySelector('.chart-placeholder').style.display = 'none';
+                    
+                    this.chart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: Object.keys(expenseByCategory),
+                            datasets: [{
+                                data: Object.values(expenseByCategory),
+                                backgroundColor: [
+                                    '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', 
+                                    '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd'
+                                ]
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        padding: 15,
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const percentage = ((context.parsed / totalExpense) * 100).toFixed(1);
+                                            return `${context.label}: ¥${context.parsed.toFixed(2)} (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            async manualBackup() {
+                const status = document.getElementById('manualBackupStatus');
+                status.innerHTML = '<div class="loading"></div> 正在准备备份...';
+                
+                try {
+                    const backupData = {
+                        records: this.records,
+                        categories: this.categories,
+                        settings: this.settings,
+                        backupTime: new Date().toISOString(),
+                        version: '1.0'
+                    };
+                    
+                    const dataStr = JSON.stringify(backupData, null, 2);
+                    const blob = new Blob([dataStr], { type: 'application/json' });
+                    
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `finance_backup_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.json`;
+                    a.click();
+                    
+                    if (this.settings.backupEmail) {
+                        const subject = `记账本备份 - ${new Date().toLocaleDateString('zh-CN')}`;
+                        const body = `备份文件已生成，请查收附件。备份时间：${new Date().toLocaleString('zh-CN')}`;
+                        
+                        setTimeout(() => {
+                            window.open(`mailto:${this.settings.backupEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+                        }, 1000);
+                        
+                        status.innerHTML = '<div style="color: #28a745;">✓ 备份文件已生成并尝试发送邮件</div>';
+                    } else {
+                        status.innerHTML = '<div style="color: #28a745;">✓ 备份文件已下载到本地</div>';
+                    }
+                    
+                    this.settings.lastBackup = new Date().toISOString();
+                    this.saveData('finance_settings', this.settings);
+                    this.updateBackupStatus();
+                    
+                } catch (error) {
+                    status.innerHTML = '<div style="color: #dc3545;">✗ 备份失败：' + error.message + '</div>';
+                }
+            }
+
+            toggleAutoBackup() {
+                this.settings.autoBackup = !this.settings.autoBackup;
+                this.saveData('finance_settings', this.settings);
+                
+                const toggle = document.getElementById('autoBackupToggle');
+                toggle.classList.toggle('active');
+                
+                if (this.settings.autoBackup) {
+                    this.showToast('已启用自动备份（每周）');
+                    this.scheduleAutoBackup();
+                } else {
+                    this.showToast('已禁用自动备份');
+                    if (this.backupTimer) {
+                        clearInterval(this.backupTimer);
+                    }
+                }
+            }
+
+            scheduleAutoBackup() {
+                this.backupTimer = setInterval(() => {
+                    if (this.settings.autoBackup) {
+                        const lastBackup = this.settings.lastBackup ? new Date(this.settings.lastBackup) : null;
+                        const now = new Date();
+                        const weekInMs = 7 * 24 * 60 * 60 * 1000;
+                        
+                        if (!lastBackup || (now - lastBackup) > weekInMs) {
+                            this.manualBackup();
+                        }
+                    }
+                }, 24 * 60 * 60 * 1000);
+            }
+
+            checkAutoBackup() {
+                if (this.settings.autoBackup) {
+                    this.scheduleAutoBackup();
+                }
+            }
+
+            async restoreData() {
+                const fileInput = document.getElementById('restoreFile');
+                const status = document.getElementById('restoreStatus');
+                
+                if (!fileInput.files.length) {
+                    status.innerHTML = '<div style="color: #dc3545;">✗ 请选择备份文件</div>';
+                    return;
+                }
+                
+                status.innerHTML = '<div class="loading"></div> 正在恢复数据...';
+                
+                try {
+                    const file = fileInput.files[0];
+                    const text = await file.text();
+                    const backupData = JSON.parse(text);
+                    
+                    if (!backupData.records || !backupData.categories || !backupData.settings) {
+                        throw new Error('无效的备份文件格式');
+                    }
+                    
+                    if (confirm(`确定要恢复备份吗？当前数据将被覆盖。\n备份时间：${new Date(backupData.backupTime).toLocaleString('zh-CN')}`)) {
+                        this.records = backupData.records;
+                        this.categories = backupData.categories;
+                        this.settings = { ...this.settings, ...backupData.settings };
+                        
+                        this.saveData('finance_records', this.records);
+                        this.saveData('finance_categories', this.categories);
+                        this.saveData('finance_settings', this.settings);
+                        
+                        this.init();
+                        
+                        status.innerHTML = '<div style="color: #28a745;">✓ 数据恢复成功</div>';
+                        this.showToast('数据恢复成功');
+                        
+                        fileInput.value = '';
+                        document.getElementById('restoreBtn').disabled = true;
+                    } else {
+                        status.innerHTML = '<div style="color: #999;">已取消恢复</div>';
+                    }
+                    
+                } catch (error) {
+                    status.innerHTML = '<div style="color: #dc3545;">✗ 恢复失败：' + error.message + '</div>';
+                }
+            }
+
+            listLocalBackups() {
+                const list = document.getElementById('localBackupsList');
+                list.innerHTML = '<p style="color: #999; text-align: center;">本地备份功能需要浏览器支持文件系统访问</p>';
+                this.showToast('提示：可使用"手动备份"下载备份文件到本地');
+            }
+
+            exportData() {
+                try {
+                    let csv = '日期,类型,分类,金额,备注\n';
+                    this.records.forEach(record => {
+                        const date = new Date(record.date).toLocaleDateString('zh-CN');
+                        const type = record.type === 'income' ? '收入' : '支出';
+                        csv += `${date},${type},${record.category},${record.amount},${record.note || ''}\n`;
+                    });
+                    
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `finance_data_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.csv`;
+                    a.click();
+                    
+                    this.showToast('数据导出成功');
+                } catch (error) {
+                    this.showToast('导出失败：' + error.message, 'error');
+                }
+            }
+
+            clearAllData() {
+                if (confirm('确定要清空所有数据吗？此操作不可恢复。')) {
+                    if (confirm('再次确认：真的要删除所有记录吗？')) {
+                        this.records = [];
+                        this.saveData('finance_records', this.records);
+                        this.renderRecords();
+                        this.updateBalance();
+                        this.showToast('所有数据已清空');
+                    }
+                }
+            }
+
+            toggleBiometric() {
+                if (!this.checkBiometricSupport()) {
+                    this.showToast('您的设备不支持生物识别', 'error');
+                    return;
+                }
+                
+                this.settings.biometric = !this.settings.biometric;
+                this.saveData('finance_settings', this.settings);
+                
+                const toggle = document.getElementById('bioToggle');
+                toggle.classList.toggle('active');
+                
+                this.showToast(this.settings.biometric ? '已启用生物识别登录' : '已禁用生物识别登录');
+            }
+
+            checkBiometricSupport() {
+                return !!(window.PublicKeyCredential || navigator.credentials);
+            }
+
+            updateBackupStatus() {
+                const lastBackup = this.settings.lastBackup;
+                document.getElementById('lastBackup').textContent = 
+                    lastBackup ? new Date(lastBackup).toLocaleDateString('zh-CN') : '从未';
+                
+                if (this.settings.autoBackup) {
+                    document.getElementById('autoBackupBtnText').textContent = '禁用自动备份';
+                } else {
+                    document.getElementById('autoBackupBtnText').textContent = '启用自动备份';
+                }
+            }
+
+            selectCategory(category) {
+                this.selectedCategory = category;
+                this.renderCategories();
+            }
+
+            showToast(message, type = 'success') {
+                const toast = document.getElementById('toast');
+                toast.textContent = message;
+                toast.className = `toast show ${type}`;
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        // 初始化应用
+        const app = new FinanceApp();
+
+        // 全局变量
+        let currentScreen = 'main';
+        let isLoggedIn = false;
+
+        // 登录相关功能
+        async function register() {
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const email = document.getElementById('backupEmail').value;
+            
+            if (!password || password.length < 6) {
+                app.showToast('密码至少需要6位字符', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                app.showToast('两次输入的密码不一致', 'error');
+                return;
+            }
+            
+            try {
+                // 使用 Web Crypto API 加密密码
+                const hashed = await CryptoUtils.hashPassword(password);
+                
+                const userData = {
+                    password: hashed.hash,
+                    salt: hashed.salt,
+                    email: email,
+                    registeredAt: new Date().toISOString()
+                };
+                
+                app.saveData('finance_user', userData);
+                app.settings.backupEmail = email;
+                app.saveData('finance_settings', app.settings);
+                
+                app.showToast('注册成功！请登录');
+                showLogin();
+                
+            } catch (error) {
+                app.showToast('注册失败：' + error.message, 'error');
+                console.error('注册错误:', error);
+            }
+        }
+
+        async function login() {
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!password) {
+                app.showToast('请输入密码', 'error');
+                return;
+            }
+            
+            try {
+                const userData = app.loadData('finance_user');
+                
+                if (!userData || !userData.password) {
+                    app.showToast('请先注册账号', 'error');
+                    showRegister();
+                    return;
+                }
+                
+                // 验证密码
+                const isValid = await CryptoUtils.verifyPassword(password, userData.password, userData.salt);
+                
+                if (isValid) {
+                    isLoggedIn = true;
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('mainScreen').style.display = 'block';
+                    app.showToast('登录成功');
+                    
+                    if (app.settings.biometric && userData.biometricRegistered) {
+                        setTimeout(() => {
+                            if (confirm('是否使用指纹/面容登录？')) {
+                                biometricLogin();
+                            }
+                        }, 500);
+                    }
+                } else {
+                    app.showToast('密码错误', 'error');
+                }
+            } catch (error) {
+                app.showToast('登录失败：' + error.message, 'error');
+                console.error('登录错误:', error);
+            }
+        }
+
+        async function biometricLogin() {
+            if (!app.checkBiometricSupport()) {
+                app.showToast('您的设备不支持生物识别', 'error');
+                return;
+            }
+            
+            try {
+                const userData = app.loadData('finance_user');
+                if (!userData || !userData.biometricRegistered) {
+                    app.showToast('请先启用生物识别登录', 'error');
+                    return;
+                }
+                
+                const credential = await navigator.credentials.get({
+                    publicKey: {
+                        challenge: new Uint8Array(32),
+                        timeout: 60000,
+                        userVerification: "preferred"
+                    }
+                });
+                
+                if (credential) {
+                    isLoggedIn = true;
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('mainScreen').style.display = 'block';
+                    app.showToast('生物识别登录成功');
+                }
+            } catch (error) {
+                app.showToast('生物识别登录失败：' + error.message, 'error');
+            }
+        }
+
+        async function registerBiometric() {
+            try {
+                const userData = app.loadData('finance_user');
+                if (userData.biometricRegistered) {
+                    return;
+                }
+                
+                const credential = await navigator.credentials.create({
+                    publicKey: {
+                        challenge: new Uint8Array(32),
+                        rp: { name: "极简记账" },
+                        user: {
+                            id: new Uint8Array(16),
+                            name: "user",
+                            displayName: "用户"
+                        },
+                        pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+                        authenticatorSelection: {
+                            userVerification: "preferred"
+                        }
+                    }
+                });
+                
+                if (credential) {
+                    userData.biometricRegistered = true;
+                    app.saveData('finance_user', userData);
+                    app.showToast('生物识别登录已启用');
+                }
+            } catch (error) {
+                console.log('生物识别注册失败:', error);
+            }
+        }
+
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            document.getElementById('loginPassword').value = '';
+        }
+
+        function showLogin() {
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('regPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('backupEmail').value = '';
+        }
+
+        // 记账功能
+        function selectType(type) {
+            app.currentType = type;
+            app.selectedCategory = app.categories[type][0];
+            
+            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.type-btn.${type}`).classList.add('active');
+            
+            app.renderCategories();
+        }
+
+        function selectCategory(category) {
+            app.selectCategory(category);
+        }
+
+        function addRecord() {
+            const amount = document.getElementById('amountInput').value;
+            const note = document.getElementById('noteInput').value;
+            
+            if (!amount || amount <= 0) {
+                app.showToast('请输入有效金额', 'error');
+                return;
+            }
+            
+            if (!app.selectedCategory) {
+                app.showToast('请选择分类', 'error');
+                return;
+            }
+            
+            if (app.addRecord(amount, app.currentType, app.selectedCategory, note)) {
+                document.getElementById('amountInput').value = '';
+                document.getElementById('noteInput').value = '';
+            }
+        }
+
+        // 界面切换
+        function switchScreen(screen) {
+            document.getElementById('mainScreen').style.display = 'none';
+            document.getElementById('settingsScreen').style.display = 'none';
+            document.getElementById('backupScreen').style.display = 'none';
+            
+            switch(screen) {
+                case 'main':
+                    document.getElementById('mainScreen').style.display = 'block';
+                    break;
+                case 'settings':
+                    document.getElementById('settingsScreen').style.display = 'block';
+                    renderSettings();
+                    break;
+                case 'backup':
+                    document.getElementById('backupScreen').style.display = 'block';
+                    break;
+            }
+            
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            currentScreen = screen;
+        }
+
+        // 设置相关
+        function renderSettings() {
+            const expenseList = document.getElementById('expenseCategories');
+            const incomeList = document.getElementById('incomeCategories');
+            
+            expenseList.innerHTML = '';
+            incomeList.innerHTML = '';
+            
+            app.categories.expense.forEach(cat => {
+                const tag = document.createElement('div');
+                tag.className = 'category-tag';
+                tag.innerHTML = `${cat} <span class="delete" onclick="deleteCategory('expense', '${cat}')">&times;</span>`;
+                expenseList.appendChild(tag);
+            });
+            
+            app.categories.income.forEach(cat => {
+                const tag = document.createElement('div');
+                tag.className = 'category-tag';
+                tag.innerHTML = `${cat} <span class="delete" onclick="deleteCategory('income', '${cat}')">&times;</span>`;
+                incomeList.appendChild(tag);
+            });
+        }
+
+        function addCategory(type) {
+            const inputId = type === 'expense' ? 'newExpenseCategory' : 'newIncomeCategory';
+            const name = document.getElementById(inputId).value.trim();
+            
+            if (!name) {
+                app.showToast('请输入分类名称', 'error');
+                return;
+            }
+            
+            if (app.addCategory(type, name)) {
+                document.getElementById(inputId).value = '';
+            }
+        }
+
+        function deleteCategory(type, name) {
+            app.deleteCategory(type, name);
+        }
+
+        async function showChangePassword() {
+            const oldPassword = prompt('请输入当前密码：');
+            if (!oldPassword) return;
+            
+            try {
+                const userData = app.loadData('finance_user');
+                const isValid = await CryptoUtils.verifyPassword(oldPassword, userData.password, userData.salt);
+                
+                if (!isValid) {
+                    app.showToast('当前密码错误', 'error');
+                    return;
+                }
+                
+                const newPassword = prompt('请输入新密码（至少6位）：');
+                if (!newPassword || newPassword.length < 6) {
+                    app.showToast('密码至少需要6位字符', 'error');
+                    return;
+                }
+                
+                const confirmPassword = prompt('请再次输入新密码：');
+                if (newPassword !== confirmPassword) {
+                    app.showToast('两次输入的密码不一致', 'error');
+                    return;
+                }
+                
+                const hashed = await CryptoUtils.hashPassword(newPassword);
+                userData.password = hashed.hash;
+                userData.salt = hashed.salt;
+                app.saveData('finance_user', userData);
+                
+                app.showToast('密码修改成功');
+            } catch (error) {
+                app.showToast('密码修改失败：' + error.message, 'error');
+            }
+        }
+
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                isLoggedIn = false;
+                document.getElementById('mainScreen').style.display = 'none';
+                document.getElementById('settingsScreen').style.display = 'none';
+                document.getElementById('backupScreen').style.display = 'none';
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('loginPassword').value = '';
+                
+                sessionStorage.clear();
+                app.showToast('已安全退出');
+            }
+        }
+
+        // 图表功能
+        function showChart() {
+            app.showChart();
+        }
+
+        function closeChart() {
+            document.getElementById('chartModal').style.display = 'none';
+        }
+
+        // 自动保存
+        let saveTimer;
+        function autoSave() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                app.saveData('finance_records', app.records);
+            }, 1000);
+        }
+
+        document.getElementById('amountInput').addEventListener('input', autoSave);
+        document.getElementById('noteInput').addEventListener('input', autoSave);
+
+        // 键盘快捷键
+        document.addEventListener('keydown', (e) => {
+            if (!isLoggedIn) return;
+            
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                addRecord();
+            }
+            
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                document.getElementById('amountInput').focus();
+            }
+            
+            if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+                e.preventDefault();
+                exportData();
+            }
+        });
+
+        // 页面加载
+        window.addEventListener('load', () => {
+            const userData = app.loadData('finance_user');
+            if (!userData || !userData.password) {
+                showRegister();
+            } else {
+                if (app.settings.biometric && userData.biometricRegistered) {
+                    setTimeout(() => {
+                        if (confirm('是否使用指纹/面容登录？')) {
+                            biometricLogin();
+                        }
+                    }, 500);
+                }
+            }
+        });
+
+        // 页面可见性
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                app.saveData('finance_records', app.records);
+            } else {
+                app.renderRecords();
+                app.updateBalance();
+            }
+        });
+
+        // 定期自动保存
+        setInterval(() => {
+            if (isLoggedIn) {
+                app.saveData('finance_records', app.records);
+            }
+        }, 5 * 60 * 1000);
+
+        // 导出函数
+        window.exportData = () => app.exportData();
+        window.manualBackup = () => app.manualBackup();
+        window.toggleAutoBackup = () => app.toggleAutoBackup();
+        window.restoreData = () => app.restoreData();
+        window.listLocalBackups = () => app.listLocalBackups();
+        window.clearAllData = () => app.clearAllData();
+        window.toggleBiometric = () => app.toggleBiometric();
+
+        // 点击模态框外部关闭
+        document.getElementById('chartModal').addEventListener('click', (e) => {
+            if (e.target.id === 'chartModal') {
+                closeChart();
+            }
+        });
+
+        // 调整底部导航
+        document.addEventListener('DOMContentLoaded', () => {
+            const navHeight = document.querySelector('.bottom-nav').offsetHeight;
+            document.body.style.paddingBottom = navHeight + 'px';
+        });
+    </script>
+</body>
+</html>
